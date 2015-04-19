@@ -10,6 +10,11 @@
 using namespace std;
 
 
+const array<string, 2> buildInCommands = {
+        "cd",
+        "help"
+};
+
 
 std::string getUserName(){
     register struct passwd *pw;
@@ -31,7 +36,6 @@ void printWelcome(){
     cout << "\n\n";
 }
 
-array<string, 2> buildInCommands = {"cd", "help"};
 
 
 bool isBuildInCommand(string command){
@@ -44,6 +48,12 @@ bool isBuildInCommand(string command){
 void executeBuildInCommand(vector<string> &arguments){};
 
 
+
+bool has_only_spaces(const string &str) {
+    return str.find_first_not_of (' ') == str.npos;
+}
+
+
 void parse(string line, vector<string> &args){
 
     std::istringstream iss(line);
@@ -51,8 +61,10 @@ void parse(string line, vector<string> &args){
 
     while(getline(iss, arg, ' '))
     {
-        args.push_back(arg);
-        std::cout << arg << std::endl;
+        if (!has_only_spaces(arg)){
+            args.push_back(arg);
+            std::cout << arg << std::endl;
+        }
     }
 }
 
@@ -70,7 +82,7 @@ int main(int argc, char **argv, char **envp) {
         printPrompt();
 
         getline(cin, line);
-        if (line == "" || line == " ") continue;
+        if (line == "") continue;
 
         parse(line, args); // token to vector
 
