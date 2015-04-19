@@ -2,7 +2,9 @@
 #include <sstream>
 #include <vector>
 #include <array>
-
+#include <sys/types.h>
+#include <signal.h>
+#include <sys/wait.h>
 // get user name
 #include <unistd.h>
 #include <pwd.h>
@@ -16,7 +18,7 @@ const array<string, 2> buildInCommands = {
 };
 
 
-std::string getUserName(){
+string getUserName(){
     register struct passwd *pw;
     register uid_t uid;
 
@@ -51,6 +53,35 @@ bool isBuildInCommand(string command){
 void executeBuildInCommand(vector<string> &arguments){};
 
 
+int executeCommand(vector<string> &args, bool background){
+    pid_t childPID = fork();
+    switch(childPID){
+        case 0:{
+            const char** argV = new const char*[args.size()+1];
+            for (int k = 0; k < args.size(); k++ ){
+                argV[k] = args[k].c_str();
+            }
+            argV[args.size()] = NULL;
+
+            execvp(argV[0], (char **)argV);
+            return -1;
+        }
+        case -1:{
+            perror( "Internal error: cannot fork." );
+            return -1;
+        }
+        default:{
+            if (background){
+                cout << childPID << endl;
+            }else if ( waitpid( childPID, 0, 0 ) < 0 ) // Parent process is waiting for the child.
+            {
+                perror( "Internal error: cannot wait for child." );
+                return -1;
+            }
+        }
+            break;
+    }
+};
 
 bool has_only_spaces(const string &str) {
     return str.find_first_not_of (' ') == str.npos;
@@ -66,7 +97,7 @@ void parse(string line, vector<string> &args){
     {
         if (!has_only_spaces(arg)){
             args.push_back(arg);
-            std::cout << arg << std::endl;
+            //std::cout << arg << std::endl;
         }
     }
 }
@@ -77,25 +108,32 @@ int main(int argc, char **argv, char **envp) {
     printWelcome();
 
     string line;
-    vector<string> args;
     vector<string> histrory;
+
+    environ = envp;
 
 
     while(line != "logout"){
         printPrompt();
+        vector<string> args;
+        bool background = false;
 
         getline(cin, line);
         if (line == "") continue;
 
         parse(line, args); // token to vector
 
+        if(args.back() == "&"){
+            args.pop_back();
+            background = true;
+        }
+
         if (!args.empty()){
             if (isBuildInCommand(args[0])){
                 cout << "is build in" << endl;
-                //executeBuildInCommand(args);
-            }else{
-                cout << "iasd" << endl;
 
+            }else{
+                executeCommand(args, background);
             }
         }
     }
