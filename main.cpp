@@ -10,6 +10,7 @@
 using namespace std;
 
 
+
 std::string getUserName(){
     register struct passwd *pw;
     register uid_t uid;
@@ -42,38 +43,46 @@ bool isBuildInCommand(string command){
 
 void executeBuildInCommand(vector<string> &arguments){};
 
+
+void parse(string line, vector<string> &args){
+
+    std::istringstream iss(line);
+    std::string arg;
+
+    while(getline(iss, arg, ' '))
+    {
+        args.push_back(arg);
+        std::cout << arg << std::endl;
+    }
+}
+
+
+
 int main(int argc, char **argv, char **envp) {
     printWelcome();
-    string input;
+
+    string line;
+    vector<string> args;
+    vector<string> histrory;
 
 
-    while(input != "logout"){
+    while(line != "logout"){
         printPrompt();
 
-        getline(cin, input);
-        vector<string> args;
+        getline(cin, line);
+        if (line == "" || line == " ") continue;
 
-        std::istringstream iss(input);
-        std::string arg;
-        while(getline(iss, arg, ' '))
-        {
-            args.push_back(arg);
-            std::cout << arg << std::endl;
+        parse(line, args); // token to vector
+
+        if (!args.empty()){
+            if (isBuildInCommand(args[0])){
+                cout << "is build in" << endl;
+                //executeBuildInCommand(args);
+            }else{
+                cout << "iasd" << endl;
+
+            }
         }
-
-
-        if (isBuildInCommand(args[0])){
-
-            cout << "is build in" << endl;
-            //executeBuildInCommand(args);
-        }else{
-
-        }
-
-
-
-
-
     }
 
     return 0;
