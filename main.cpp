@@ -108,7 +108,7 @@ int main(int argc, char **argv, char **envp) {
     printWelcome();
 
     string line;
-    vector<string> histrory;
+   // vector<string> histrory;
 
     environ = envp;
 
