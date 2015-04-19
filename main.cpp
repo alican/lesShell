@@ -26,11 +26,14 @@ std::string getUserName(){
 }
 
 void printPrompt(){
+    string homedir = getenv("HOME");
     cout << "[" + getUserName() + "] $ ";
 }
 
 void printWelcome(){
     cout << "-- lesShell v0.01-- " << endl;
+    cout << getenv("HOME") << endl;
+    cout << getenv("LOGNAME") << endl;
     cout << "Angemeldet als: " + getUserName() << endl;
     cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~";
     cout << "\n\n";
