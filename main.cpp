@@ -8,8 +8,17 @@
 // get user name
 #include <unistd.h>
 #include <pwd.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
 
 using namespace std;
+
+
+void signal_callback_handler(int signum){
+    cout << "signum: " << signum << endl;
+
+}
 
 
 const array<string, 2> buildInCommands = {
@@ -27,9 +36,9 @@ string getUserName(){
     return string(pw->pw_name);
 }
 
-void printPrompt(){
+string printPrompt(){
     string homedir = getenv("HOME");
-    cout << "[" + getUserName() + "] $ ";
+    return "[" + getUserName() + "] $ ";
 }
 
 void printWelcome(){
@@ -103,26 +112,28 @@ void parse(string line, vector<string> &args){
     }
 }
 
-
-
 int main(int argc, char **argv, char **envp) {
+    signal(SIGUSR1, signal_callback_handler);
+
+    char* input, shell_prompt[100];
     printWelcome();
 
-    string line;
-   // vector<string> histrory;
-
-    environ = envp;
-
-
-    while(line != "logout"){
-        printPrompt();
+    for(;;){
         vector<string> args;
         bool background = false;
+        const char *prompt = printPrompt().c_str();
 
-        getline(cin, line);
-        if (line == "") continue;
+        input = readline(prompt);
 
-        parse(line, args); // token to vector
+        snprintf(shell_prompt, sizeof(shell_prompt), "%s:%s $ ", getenv("USER"), getcwd(NULL, 1024));
+
+        if (!input){
+            break;
+        }
+
+        add_history(input);
+
+        parse(input, args); // token to vector
 
         if(args.back() == "&"){
             args.pop_back();
@@ -137,6 +148,8 @@ int main(int argc, char **argv, char **envp) {
                 executeCommand(args, background);
             }
         }
+        free(input);
+
     }
 
     return 0;
