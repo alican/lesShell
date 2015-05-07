@@ -19,6 +19,12 @@ void signal_callback_handler(int signum){
     cout << "signum: " << signum << endl;
 
 }
+void childSignalHandler(int signum) {
+    int status;
+    pid_t pid;
+
+    pid = waitpid(-1, &status, WNOHANG);
+}
 
 
 const array<string, 2> buildInCommands = {
@@ -82,6 +88,7 @@ int executeCommand(vector<string> &args, bool background){
         default:{
             if (background){
                 cout << childPID << endl;
+                signal(SIGCHLD, childSignalHandler);
             }else if ( waitpid( childPID, 0, 0 ) < 0 ) // Parent process is waiting for the child.
             {
                 perror( "Internal error: cannot wait for child." );
@@ -95,6 +102,7 @@ int executeCommand(vector<string> &args, bool background){
 bool has_only_spaces(const string &str) {
     return str.find_first_not_of (' ') == str.npos;
 }
+
 
 
 
