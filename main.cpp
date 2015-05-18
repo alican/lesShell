@@ -100,6 +100,8 @@ void printWelcome(){
 }
 
 
+
+
 int executeCommand(vector<string> &args, bool background){
     int options = WUNTRACED;
 
