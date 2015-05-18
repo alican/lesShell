@@ -24,22 +24,24 @@ vector<pid_t> processlist;
 JobController jbController;
 int status;
 
-void sigint_handler(int signum){
+void sigint_handler(int signum){            // cmd + C
     pid_t pid = jbController.getFgJob();
     int killreturn = killpg(pid, SIGINT);
 }
 
-void sigtstp_handler(int signum){
+void sigtstp_handler(int signum){         // cmd + Z
     pid_t pid = jbController.getFgJob();
     killpg(pid, SIGTSTP);
 }
 
-void childSignalHandler(int signum) {
+void childSignalHandler(int signum) {      // wenn child beendet wurde
     int status;
     pid_t pid;
     pid = waitpid(-1, &status, WNOHANG|WUNTRACED);
 }
 
+
+// ############################### BUILD IN Command ################################
 void command_help(void) {
     cout << "help?" << endl;
 }
@@ -113,7 +115,7 @@ int executeCommand(vector<string> &args, bool background){
                 argV[k] = args[k].c_str();
             }
             argV[args.size()] = NULL;
-            setpgid(0, 0);
+            setpgid(0, 0);              // child bekommt neue Gruppe
             execvp(argV[0], (char **)argV);
             return -1;
         }
@@ -126,7 +128,7 @@ int executeCommand(vector<string> &args, bool background){
             signal(SIGTSTP, sigtstp_handler);
 
             Job *newjob = new Job(args[0], childPID);
-            jbController.addJob(newjob);
+            jbController.addJob(newjob);                // Prozess kommt in die JobListe
 
             if (background){
                 options = WNOHANG|WUNTRACED;
