@@ -16,6 +16,8 @@ public:
     JobController();
     void addJob(Job *job);
     pid_t getFgJob();
+    pid_t stopFgJob();
+    pid_t contStoppedJob(int state);
     Job *getBgJob();
 
 

@@ -30,8 +30,8 @@ void sigint_handler(int signum){            // cmd + C
 }
 
 void sigtstp_handler(int signum){         // cmd + Z
-    pid_t pid = jbController.getFgJob();
-    killpg(pid, SIGTSTP);
+    pid_t pid = jbController.stopFgJob();
+    //killpg(pid, SIGTSTP);
 }
 
 void childSignalHandler(int signum) {      // wenn child beendet wurde
@@ -46,16 +46,16 @@ void command_help(void) {
     cout << "help?" << endl;
 }
 void command_fg(void) {
-    pid_t pid = jbController.getFgJob();
-    cout << pid;
-    int killreturn = killpg(pid, SIGCONT);
-    pid = waitpid(pid, &status, 0);
+    pid_t pid = jbController.contStoppedJob(0);
+   // pid_t pid = jbController.getFgJob();
+   // cout << pid;
+   // int killreturn = killpg(pid, SIGCONT);
+    waitpid(pid, &status, WUNTRACED);
 
 }
 void command_bg(void) {
-    pid_t pid = jbController.getFgJob();
-    cout << pid;
-    int killreturn = killpg(pid, SIGCONT);
+    pid_t pid = jbController.contStoppedJob(1);
+    //int killreturn = killpg(pid, SIGCONT);
 }
 void command_exit(void) {
     exit(0);
