@@ -99,6 +99,7 @@ void printWelcome(){
     cout << "\n\n";
 }
 
+
 int executeCommand(vector<string> &args, bool background){
     int options = WUNTRACED;
 
