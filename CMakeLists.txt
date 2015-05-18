@@ -8,6 +8,6 @@ include(cmake/FindReadline.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lreadline")
 
 set(SOURCE_FILES main.cpp)
-add_executable(lesShell ${SOURCE_FILES})
+add_executable(lesShell ${SOURCE_FILES} JobController.cpp JobController.h Job.cpp Job.h)
 
 

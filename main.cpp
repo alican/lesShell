@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <array>
 #include <sys/types.h>
 #include <signal.h>
@@ -11,26 +12,68 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "JobController.h"
+#include "Job.h"
+
+
 
 using namespace std;
 
 
-void signal_callback_handler(int signum){
-    cout << "signum: " << signum << endl;
+vector<pid_t> processlist;
+JobController jbController;
+int status;
 
+void sigint_handler(int signum){
+    pid_t pid = jbController.getFgJob();
+    int killreturn = killpg(pid, SIGINT);
 }
+
+void sigtstp_handler(int signum){
+    pid_t pid = jbController.getFgJob();
+    killpg(pid, SIGTSTP);
+}
+
 void childSignalHandler(int signum) {
     int status;
     pid_t pid;
-
-    pid = waitpid(-1, &status, WNOHANG);
+    pid = waitpid(-1, &status, WNOHANG|WUNTRACED);
 }
 
+void command_help(void) {
+    cout << "help?" << endl;
+}
+void command_fg(void) {
+    pid_t pid = jbController.getFgJob();
+    cout << pid;
+    int killreturn = killpg(pid, SIGCONT);
+    pid = waitpid(pid, &status, 0);
 
-const array<string, 2> buildInCommands = {
-        "cd",
-        "help"
+}
+void command_bg(void) {
+    pid_t pid = jbController.getFgJob();
+    cout << pid;
+    int killreturn = killpg(pid, SIGCONT);
+}
+void command_exit(void) {
+    exit(0);
+}
+typedef void (*CommandFunction)(void); // function pointer type
+const map<std::string, CommandFunction> CommandMap = {
+        {"logout", &command_exit},
+        {"help", &command_help},
+        {"fg", &command_fg},
+        {"bg", &command_bg},
 };
+
+int exeBuildInCommands(const std::string& pFunction)
+{
+    map<std::string, CommandFunction>::const_iterator iter = CommandMap.find(pFunction);
+    if (iter == CommandMap.end()) {
+        return 0;
+    }
+    (*iter->second)();
+}
 
 
 string getUserName(){
@@ -56,19 +99,9 @@ void printWelcome(){
     cout << "\n\n";
 }
 
-
-
-bool isBuildInCommand(string command){
-    for (string cmd : buildInCommands){
-        if (cmd == command) return true;
-    }
-    return false;
-}
-
-void executeBuildInCommand(vector<string> &arguments){};
-
-
 int executeCommand(vector<string> &args, bool background){
+    int options = WUNTRACED;
+
     pid_t childPID = fork();
     switch(childPID){
         case 0:{
@@ -77,7 +110,7 @@ int executeCommand(vector<string> &args, bool background){
                 argV[k] = args[k].c_str();
             }
             argV[args.size()] = NULL;
-
+            setpgid(0, 0);
             execvp(argV[0], (char **)argV);
             return -1;
         }
@@ -86,10 +119,17 @@ int executeCommand(vector<string> &args, bool background){
             return -1;
         }
         default:{
+            signal(SIGINT, sigint_handler);
+            signal(SIGTSTP, sigtstp_handler);
+
+            Job *newjob = new Job(args[0], childPID);
+            jbController.addJob(newjob);
+
             if (background){
-                cout << childPID << endl;
+                options = WNOHANG|WUNTRACED;
                 signal(SIGCHLD, childSignalHandler);
-            }else if ( waitpid( childPID, 0, 0 ) < 0 ) // Parent process is waiting for the child.
+            }
+            if (waitpid(childPID, &status, options) < 0) // Parent process is waiting for the child.
             {
                 perror( "Internal error: cannot wait for child." );
                 return -1;
@@ -102,8 +142,6 @@ int executeCommand(vector<string> &args, bool background){
 bool has_only_spaces(const string &str) {
     return str.find_first_not_of (' ') == str.npos;
 }
-
-
 
 
 void parse(string line, vector<string> &args){
@@ -121,7 +159,6 @@ void parse(string line, vector<string> &args){
 }
 
 int main(int argc, char **argv, char **envp) {
-    signal(SIGUSR1, signal_callback_handler);
 
     char* input, shell_prompt[100];
     printWelcome();
@@ -149,9 +186,7 @@ int main(int argc, char **argv, char **envp) {
         }
 
         if (!args.empty()){
-            if (isBuildInCommand(args[0])){
-                cout << "is build in" << endl;
-
+            if (exeBuildInCommands(args[0])){
             }else{
                 executeCommand(args, background);
             }
