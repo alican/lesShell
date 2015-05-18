@@ -24,7 +24,6 @@ Job *JobController::getBgJob() {
 }
 
 pid_t JobController::getFgJob() {
-    //joblist.back();
     for (auto it = joblist.rbegin(); it != joblist.rend(); ++it)
     {
        if(it->getState() == 0){
@@ -57,4 +56,34 @@ pid_t JobController::contStoppedJob(int state) {
         }
     }
     return -1;
+}
+
+void JobController::removeJob(pid_t pid) {
+
+    for (auto it = joblist.rbegin(); it != joblist.rend(); ++it)
+    {
+        if(it->getPid() == pid){
+            it->setState(-1);
+        }
+    }
+}
+
+pid_t JobController::exitFgJob() {
+    for (auto it = joblist.rbegin(); it != joblist.rend(); ++it)
+    {
+        if(it->getState() == 0){
+            int killreturn = killpg(it->getPid(), SIGINT);
+            it->setState(-1);
+        }
+    }
+}
+
+void JobController::stopAllJobs() {
+    for (auto it = joblist.rbegin(); it != joblist.rend(); ++it)
+    {
+        int killreturn = killpg(it->getPid(), SIGINT);
+        if (killreturn < -1){
+            killpg(it->getPid(), SIGKILL);
+        }
+    }
 }

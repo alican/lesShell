@@ -25,8 +25,7 @@ JobController jbController;
 int status;
 
 void sigint_handler(int signum){            // cmd + C
-    pid_t pid = jbController.getFgJob();
-    int killreturn = killpg(pid, SIGINT);
+    pid_t pid = jbController.exitFgJob();
 }
 
 void sigtstp_handler(int signum){         // cmd + Z
@@ -35,9 +34,9 @@ void sigtstp_handler(int signum){         // cmd + Z
 }
 
 void childSignalHandler(int signum) {      // wenn child beendet wurde
-    int status;
-    pid_t pid;
-    pid = waitpid(-1, &status, WNOHANG|WUNTRACED);
+    pid_t pid = waitpid(-1, &status, WNOHANG|WUNTRACED);
+    cout << pid << endl;
+    jbController.removeJob(pid);
 }
 
 
@@ -58,6 +57,7 @@ void command_bg(void) {
     //int killreturn = killpg(pid, SIGCONT);
 }
 void command_exit(void) {
+    jbController.stopAllJobs();
     exit(0);
 }
 typedef void (*CommandFunction)(void); // function pointer type
